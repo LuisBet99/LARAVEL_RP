@@ -1,0 +1,62 @@
+//
+
+    En la tabla de roles, es necesario crear los primeros roles
+        1-ALUMNO
+        2-DOCENTE
+        3-COORDINADOR_TUTO
+        4-COORDINADOR_INST
+
+    Tambien cargar las carreras que vienen en el excel de pruebas de alumnos.
+
+//
+
+
+
+ // Establece el límite a 300 segundos (5 minutos) esto para las peticiones se queden esperando mas tiempo. esto en el archivo php.ini
+max_execution_time = 300
+
+//Crear modelos segun las migraciones creadas:
+php artisan make:model NombreDelModelo -m
+
+//Crear modelo manualmente:
+php artisan model:model NombreDelModelo
+
+
+
+//CREACION DE CONTROLADORES:
+    php artisan make:controller CoordinadorInstitucionalController --resource &&
+    php artisan make:controller CoordinadorTutoriasController --resource &&
+    php artisan make:controller TutoresController --resource &&
+    php artisan make:controller AlumnosController --resource &&
+    php artisan make:controller DesarrolloAcademicoController --resource
+
+
+
+    php artisan make:migration roles_table &&
+    php artisan make:migration permisos_table &&
+    php artisan make:migration rol_permisos_table &&
+
+    php artisan make:migration carreras_table &&
+    php artisan make:migration docentes_table &&
+    php artisan make:migration coordinador_institucional_table &&
+    php artisan make:migration coordinador_tutorias_table &&
+    php artisan make:migration tutores_table &&
+    php artisan make:migration alumnos_table &&
+    php artisan make:migration tutor_asignado_table &&
+    php artisan make:migration listado_tutorados_table &&
+
+
+    php artisan make:migration generaciones_table &&
+    php artisan make:migration periodos_table &&
+    php artisan make:migration fechas_periodos_table &&
+    php artisan make:migration fechas_periodos_asignadas_table &&
+
+
+    php artisan make:migration primer_informe_table &&
+    php artisan make:migration segundo_informe_table &&
+    php artisan make:migration tercer_informe_table &&
+    php artisan make:migration informe_periodos_table
+
+
+
+
