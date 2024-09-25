@@ -791,13 +791,20 @@ class CoordinadorInstitucionalController extends Controller
         //=========================================================================
         //=========================================================================
 
-        $total_tutores_asignados = ListadoTutorados::select('listado_tutorados.*', 'alumnos.id_carrera as ALUMNOS_id_carrera', 'alumnos.id as ALUMNOS_id', 'alumnos.id_generacion as ALUMNO_id_generacion')
-            ->join('alumnos', 'alumnos.id', '=', 'listado_tutorados.id_alumno')
-            ->where('listado_tutorados.id_generacion', $id_generacion)
-            ->where('alumnos.id_carrera', $id_carrera)
-            // ->where('listado_tutorados.id_tutor', $id_tutor) // Agrega esta condición
-            ->distinct(['alumnos.id_carrera', 'listado_tutorados.id_generacion']) // Aplica distinct al campo id_tutor
-            ->count();
+        $total_tutores_asignados = ListadoTutorados::join('tutores', 'tutores.id', '=', 'listado_tutorados.id_tutor')
+            ->join('docentes', 'docentes.id', '=', 'tutores.id_docente')
+            ->where('docentes.id_carrera', $id_carrera)
+            ->distinct('listado_tutorados.id_tutor')
+            ->count('listado_tutorados.id_tutor');
+
+
+        //$total_tutores_asignados = ListadoTutorados::select('listado_tutorados.*', 'alumnos.id_carrera as ALUMNOS_id_carrera', 'alumnos.id as ALUMNOS_id', 'alumnos.id_generacion as ALUMNO_id_generacion')
+            //->join('alumnos', 'alumnos.id', '=', 'listado_tutorados.id_alumno')
+            //->where('listado_tutorados.id_generacion', $id_generacion)
+            //->where('alumnos.id_carrera', $id_carrera)
+        //    // ->where('listado_tutorados.id_tutor', $id_tutor) // Agrega esta condición
+            //->distinct(['alumnos.id_carrera', 'listado_tutorados.id_generacion']) // Aplica distinct al campo id_tutor
+            //->count();
 
 
 
@@ -836,21 +843,50 @@ class CoordinadorInstitucionalController extends Controller
         //=========================================================================
         //=========================================================================
 
-        $numero_total_alumnos_con_diagnostico = PrimerInforme::select('registro_diagnostico')->where('id_generacion', $id_generacion)->where('periodo', $periodo)
-            ->get();
+        //SE AMPLIO LA CONSULTA DE ALUMNOS CON DIAGNOSTICO AGREGANDO EL ID DE CARRERA
+        $numero_total_alumnos_con_diagnostico = PrimerInforme::select('primer_informe.*', 'registro_diagnostico')
+        ->join('alumnos', 'alumnos.id', '=', 'primer_informe.id_alumno')
+        ->where('primer_informe.id_generacion', $id_generacion)
+        ->where('primer_informe.periodo', $periodo)
+        ->where('alumnos.id_carrera', $id_carrera)
+        ->where('alumnos.id_generacion', $id_generacion)
+        ->get();
+        
         $numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico->filter(function ($item) {
             return $item->registro_diagnostico == 'SI'; // Reemplaza 'tu_condicion' con el nombre del campo correcto
         });
         $numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico->count();
-
-
+    
+        //$numero_total_alumnos_con_diagnostico = ($numero_total_alumnos_asignados_carrera) - $numero_total_alumnos_con_diagnostico;
 
         // Asegurarse de que $numero_total_alumnos_asignados_carrera no sea cero
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $porcentaje_alumnos_con_diagnostico = ($numero_total_alumnos_con_diagnostico * 100) / $numero_total_alumnos_asignados_carrera;
+            $porcentaje_alumnos_con_diagnostico = ($numero_total_alumnos_con_diagnostico*100) / $numero_total_alumnos_asignados_carrera;
         } else {
             $porcentaje_alumnos_con_diagnostico = 0; // O manejarlo de otra manera según tus necesidades
         }
+
+        
+
+
+
+
+
+        /*$numero_total_alumnos_con_diagnostico = PrimerInforme::select('primer_informe.registro_diagnostico')
+            ->join('alumnos', 'alumnos.id', '=', 'primer_informe.id_alumno')
+            ->where('id_generacion', $id_generacion)  
+            ->where('periodo', $periodo)
+            ->where('alumnos.id_carrera', $id_carrera)
+            ->where('registro_diagnostico', 'SI'); // Filtra directamente en la consulta  
+            //->count(); // Cuenta directamente los registros que cumplen la condición  
+
+
+        // Asegurarse de que $numero_total_alumnos_asignados_carrera no sea cero  
+        if ($numero_total_alumnos_asignados_carrera != 0) {  
+            $porcentaje_alumnos_con_diagnostico = ($numero_total_alumnos_con_diagnostico * 100) / $numero_total_alumnos_asignados_carrera;  
+        } else {  
+            $porcentaje_alumnos_con_diagnostico = 0; // O manejarlo de otra manera según tus necesidades  
+        }*/
 
         //=========================================================================
         //=========================================================================
@@ -985,9 +1021,9 @@ class CoordinadorInstitucionalController extends Controller
         //=========================================================================
         //=========================================================================
 
-
-
-        $alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($alumnos_atendidos_forma_grupal_total + $alumnos_atendidos_forma_individual_total + $alumnos_atendidos_forma_ambas_total);
+        //Calculo de alumno que no asistieron
+        $alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($numero_total_alumnos_atendidos_1 + $numero_total_alumnos_atendidos_2 + $numero_total_alumnos_atendidos_3);
+        //$alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($alumnos_atendidos_forma_grupal_total + $alumnos_atendidos_forma_individual_total + $alumnos_atendidos_forma_ambas_total);
         if ($numero_total_alumnos_asignados_carrera != 0) {
             $alumnos_atendidos_forma_inasistencia_porcentaje = ($alumnos_atendidos_forma_inasistencia * 100) / $numero_total_alumnos_asignados_carrera;
         } else {
@@ -1004,11 +1040,11 @@ class CoordinadorInstitucionalController extends Controller
 
 
         // Asegurarse de que $numero_total_alumnos_asignados_carrera no sea cero
-        if ($numero_total_alumnos_asignados_carrera != 0) {
+        /*if ($numero_total_alumnos_asignados_carrera != 0) {
             $porcentaje_alumnos_con_diagnostico = ($numero_total_alumnos_con_diagnostico * 100) / $numero_total_alumnos_asignados_carrera;
         } else {
             $porcentaje_alumnos_con_diagnostico = 0; // O manejarlo de otra manera según tus necesidades
-        }
+        }*/
 
 
 
@@ -1251,19 +1287,26 @@ class CoordinadorInstitucionalController extends Controller
         $sumaTotalSesiones = array_sum($sesionesArray);
         $sumaTotalHoras = array_sum($horasArray);
 
+    
         //Obtenemos la lista de tutores asignados, que usaremos para todas las demas consultas:
         $lista_tutores_asignados = ListadoTutorados::select('listado_tutorados.id_tutor', 'tutores.*', 'docentes.*')
             ->join('tutores', 'tutores.id', '=', 'listado_tutorados.id_tutor')
             ->join('docentes', 'docentes.id', '=', 'tutores.id_docente')
             ->where('listado_tutorados.id_generacion', $id_generacion)
-            ->distinct(['listado_tutorados.id_tutor']) // Aplica distinct al campo id_tutor
+            ->distinct('listado_tutorados.id_tutor') // Aplica distinct al campo id_tutor
             ->get();
-
+          
+        
+        $conteo_tutores_asignados = $lista_tutores_asignados->count();
         //Guardamos en un array todas las clves de los tutores:
         $array_id_tutores = [];
         foreach ($lista_tutores_asignados as $tutor) {
             array_push($array_id_tutores, $tutor->id_tutor);
         }
+
+
+
+        //$lista_tutores_asignados_numero = count($array_id_tutores);
 
 
 
@@ -1804,8 +1847,10 @@ class CoordinadorInstitucionalController extends Controller
 
             $total_informes_terminados = $total_primer_informe_terminado + $total_segundo_informe_terminado + $total_tercer_informe_terminado;
 
+                                                                                                                              //ERROR GENERACION DE INFORME SEMESTRAL              
+            $pendientes = $total_tutorados >= $total_informes_terminados ? $total_tutorados - $total_informes_terminados : 0; //return ($total_informes_terminados);
 
-            $pendientes = $total_tutorados >= $total_informes_terminados ? $total_tutorados - $total_informes_terminados : 0;
+
 
             return response()->json([
                 'codigo' => 1,
