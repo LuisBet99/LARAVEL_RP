@@ -907,7 +907,7 @@ class CoordinadorInstitucionalController extends Controller
 
         // Asegurarse de que $numero_total_alumnos_asignados_carrera no sea cero
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $porcentaje_alumnos_atendidos_1 = ($numero_total_alumnos_atendidos_1 * 100) / $numero_total_alumnos_asignados_carrera;
+            $porcentaje_alumnos_atendidos_1 = ($numero_total_alumnos_atendidos_1 * 100) / $numero_total_alumnos_matricula_carrera;
         } else {
             $porcentaje_alumnos_atendidos_1 = 0; // O manejarlo de otra manera según tus necesidades
         }
@@ -934,7 +934,7 @@ class CoordinadorInstitucionalController extends Controller
         //Sacamos el porcentaje segun el numero_total_alumnos_asignados_carrera:
         // Asegurarse de que $numero_total_alumnos_asignados_carrera no sea cero
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $porcentaje_alumnos_atendidos_2 = ($numero_total_alumnos_atendidos_2 * 100) / $numero_total_alumnos_asignados_carrera;
+            $porcentaje_alumnos_atendidos_2 = ($numero_total_alumnos_atendidos_2 * 100) / $numero_total_alumnos_matricula_carrera;
         } else {
             $porcentaje_alumnos_atendidos_2 = 0; // O manejarlo de otra manera según tus necesidades
         }
@@ -955,7 +955,7 @@ class CoordinadorInstitucionalController extends Controller
         $numero_total_alumnos_atendidos_3 = $numero_total_alumnos_atendidos_3->count();
 
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $porcentaje_alumnos_atendidos_3 = ($numero_total_alumnos_atendidos_3 * 100) / $numero_total_alumnos_asignados_carrera;
+            $porcentaje_alumnos_atendidos_3 = ($numero_total_alumnos_atendidos_3 * 100) / $numero_total_alumnos_matricula_carrera;
         } else {
             $porcentaje_alumnos_atendidos_3 = 0; // O manejarlo de otra manera según tus necesidades
         }
@@ -1021,15 +1021,20 @@ class CoordinadorInstitucionalController extends Controller
         //=========================================================================
         //=========================================================================
 
+        //AJUSTE NO ATENDIDOS POR INASISTENCIA 17/10/2024
+        $alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_matricula_carrera - ($numero_total_alumnos_atendidos_1 + $numero_total_alumnos_atendidos_2 + $numero_total_alumnos_atendidos_3);
+
+        
+        /*
         //Calculo de alumno que no asistieron
         $alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($numero_total_alumnos_atendidos_1 + $numero_total_alumnos_atendidos_2 + $numero_total_alumnos_atendidos_3);
-        //$alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($alumnos_atendidos_forma_grupal_total + $alumnos_atendidos_forma_individual_total + $alumnos_atendidos_forma_ambas_total);
+        //$alumnos_atendidos_forma_inasistencia = $numero_total_alumnos_asignados_carrera - ($alumnos_atendidos_forma_grupal_total + $alumnos_atendidos_forma_individual_total + $alumnos_atendidos_forma_ambas_total);*/
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $alumnos_atendidos_forma_inasistencia_porcentaje = ($alumnos_atendidos_forma_inasistencia * 100) / $numero_total_alumnos_asignados_carrera;
+            $alumnos_atendidos_forma_inasistencia_porcentaje = ($alumnos_atendidos_forma_inasistencia * 100) / $numero_total_alumnos_matricula_carrera;
         } else {
             $alumnos_atendidos_forma_inasistencia_porcentaje = 0; // O manejarlo de otra manera según tus necesidades
         }
-
+        
 
         //=========================================================================
         //=========================================================================
@@ -1107,8 +1112,8 @@ class CoordinadorInstitucionalController extends Controller
                     $alumnos_atendidos_becas++;
                     continue;
                 } else {
-                    $alumnos_atendidos_otras++;
-                    continue;
+                    //$alumnos_atendidos_otras++;
+                    //continue;
                 }
             }
 
@@ -1136,8 +1141,8 @@ class CoordinadorInstitucionalController extends Controller
                     $alumnos_atendidos_becas++;
                     continue;
                 } else {
-                    $alumnos_atendidos_otras++;
-                    continue;
+                    //$alumnos_atendidos_otras++;
+                    //continue;
                 }
             }
 
@@ -1165,8 +1170,8 @@ class CoordinadorInstitucionalController extends Controller
                     $alumnos_atendidos_becas++;
                     continue;
                 } else {
-                    $alumnos_atendidos_otras++;
-                    continue;
+                    //$alumnos_atendidos_otras++;
+                    //continue;
                 }
             }
         }
@@ -1203,8 +1208,10 @@ class CoordinadorInstitucionalController extends Controller
             $porcentaje_alumnos_atendidos_becas = 0; // O manejarlo de otra manera según tus necesidades
         }
 
+        $alumnos_atendidos_otras = $numero_total_alumnos_matricula_carrera - ($alumnos_atendidos_piscologia + $alumnos_atendidos_instancias_extras + $alumnos_atendidos_academica + $alumnos_atendidos_salud + $alumnos_atendidos_becas);
+
         if ($numero_total_alumnos_asignados_carrera != 0) {
-            $porcentaje_alumnos_atendidos_otras = ($alumnos_atendidos_otras * 100) / $numero_total_alumnos_asignados_carrera;
+            $porcentaje_alumnos_atendidos_otras = ($alumnos_atendidos_otras * 100) / $numero_total_alumnos_matricula_carrera;
         } else {
             $porcentaje_alumnos_atendidos_otras = 0; // O manejarlo de otra manera según tus necesidades
         }
@@ -1682,7 +1689,7 @@ class CoordinadorInstitucionalController extends Controller
         $resultado->sumaTotalHoras = $sumaTotalHoras;
 
         $resultado->total_tutores_asignados = $total_tutores_asignados;
-        $resultado->numero_total_alumnos_asignados_carrera = $numero_total_alumnos_asignados_carrera;
+        $resultado->numero_total_alumnos_asignados_carrera = $numero_total_alumnos_matricula_carrera;
 
         $resultado->numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico;
         $resultado->porcentaje_alumnos_con_diagnostico = $porcentaje_alumnos_con_diagnostico;
@@ -1739,7 +1746,7 @@ class CoordinadorInstitucionalController extends Controller
 
 
         $resultado->total_matricula_carrera = $numero_total_alumnos_matricula_carrera;
-        $resultado->porcentaje_total_matricula_carrera = ($numero_total_alumnos_asignados_carrera / $numero_total_alumnos_matricula_carrera) * 100;
+        $resultado->porcentaje_total_matricula_carrera = ($numero_total_alumnos_matricula_carrera / $numero_total_alumnos_matricula_carrera) * 100;
 
         $resultado->informe_general = $array_tutores_informacion;
         $resultado->distribucion_por_sexo_1 = $array_tutores_informacion_distribucion_sexo;
