@@ -323,7 +323,7 @@ class TutoresController extends Controller
         $beca = $request->input('tercera'); //BECA = SI, NO
         $tipo_beca = $request->input('cuarta'); // TIPO BECA = PROM,SOCI,DEP,OTRO
         $numero_sesiones = $request->input('numero_sesiones');
-        $horas_atencion = $request->input('horas_atencion');
+        $horas_atencion = 2;//$request->input('horas_atencion');
         //Convertir en string el porcentaje de asistencias.
         $porcentaje_asistencias = $request->input('asistencia');
         $actividad_tutorial = $request->input('quinta'); //ACTIVIDAD TUTORIAL = CANALIZACION,ASESORIA, ETC
@@ -379,7 +379,7 @@ class TutoresController extends Controller
 
         $estatus_atendido = $request->input('primera'); //ASISTIO = SI, NO
         $numero_sesiones = $request->input('segunda'); //NUMERO DE SESIONES
-        $horas_atencion = $request->input('tercera'); //HORAS DE ATENCION
+        $horas_atencion = 2;//$request->input('tercera'); //HORAS DE ATENCION
         $porcentaje_asistencias = $request->input('asistencia');
         $actividad_tutorial = $request->input('cuarta'); // ACTIVIDAD TUTORIAL = CANALIZACION,ASESORIA, ETC
         $modalidad = $request->input('quinta'); //MODALIDAD = GRUPAL,INDIVIDUAL,AMBAS
@@ -443,7 +443,7 @@ class TutoresController extends Controller
 
         $estatus_atendido = $request->input('primera'); //ASISTIO = SI, NO
         $numero_sesiones = $request->input('segunda'); //NUMERO DE SESIONES
-        $horas_atencion = $request->input('tercera'); //HORAS DE ATENCION
+        $horas_atencion = 1;//$request->input('tercera'); //HORAS DE ATENCION
         $porcentaje_asistencias = $request->input('asistencia');
         $actividad_tutorial = $request->input('cuarta'); // ACTIVIDAD TUTORIAL = CANALIZACION,ASESORIA, ETC
         $modalidad = $request->input('quinta'); //MODALIDAD = GRUPAL,INDIVIDUAL,AMBAS
@@ -613,7 +613,7 @@ class TutoresController extends Controller
         $periodo = $request->input('periodo');
         $fecha = $request->input('fecha');
         $numero_sesiones_totales = $request->input('segunda');
-        $numero_horas_totales = $request->input('tercera');
+        $numero_horas_totales = $totalNumeroHorasAtencionPrimero + $totalNumeroHorasAtencionSegundo + $totalNumeroHorasAtencionTercero;//$request->input('tercera');
         $numero_total_asistencias = $request->input('cuarta');
         $clave_prep_actividad = $request->input('quinta');
         $clave_prep_situacion = $request->input('sexta');

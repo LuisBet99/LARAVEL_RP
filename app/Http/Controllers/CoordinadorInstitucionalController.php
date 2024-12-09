@@ -1778,6 +1778,514 @@ class CoordinadorInstitucionalController extends Controller
 
     }
 
+    public function generarReporteParcial(Request $request)
+    {
+
+        $id_carrera = $request->input('id_carrera');
+        $id_generacion = $request->input('id_generacion');
+        $id_periodo = $request->input('id_periodo');
+        $periodo = $request->input('periodo');
+
+        //=========================================================================
+        //=========================================================================
+        //=========================================================================
+
+        $lista_alumnos = ListadoTutorados::select('listado_tutorados.*', 'alumnos.id', 'alumnos.id_carrera', 'alumnos.id_generacion as ALUMNO_id_generacion')
+            ->join('alumnos', 'alumnos.id', '=', 'listado_tutorados.id_alumno')
+            ->where('listado_tutorados.id_generacion', $id_generacion) // Especificamos la tabla
+            ->where('alumnos.id_carrera', $id_carrera)
+            ->where('alumnos.id_generacion', $id_generacion) // También especificamos la tabla
+            ->get();
+
+        $numero_total_alumnos_matricula_carrera = $lista_alumnos->count();
+
+         //=========================================================================
+        //=========================================================================
+        //=========================================================================
+
+        //SE AMPLIO LA CONSULTA DE ALUMNOS CON DIAGNOSTICO AGREGANDO EL ID DE CARRERA
+        $numero_total_alumnos_con_diagnostico = PrimerInforme::select('primer_informe.*', 'registro_diagnostico')
+        ->join('alumnos', 'alumnos.id', '=', 'primer_informe.id_alumno')
+        ->where('primer_informe.id_generacion', $id_generacion)
+        ->where('primer_informe.periodo', $periodo)
+        ->where('alumnos.id_carrera', $id_carrera)
+        ->where('alumnos.id_generacion', $id_generacion)
+        ->get();
+        
+        $numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico->filter(function ($item) {
+            return $item->registro_diagnostico == 'SI'; // Reemplaza 'tu_condicion' con el nombre del campo correcto
+        });
+        $numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico->count();
+    
+        if ($numero_total_alumnos_asignados_carrera != 0) {
+            $porcentaje_alumnos_con_diagnostico = ($numero_total_alumnos_con_diagnostico*100) / $numero_total_alumnos_asignados_carrera;
+        } else {
+            $porcentaje_alumnos_con_diagnostico = 0; // O manejarlo de otra manera según tus necesidades
+        }
+
+        ///////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
+        //ALUMNOS ATENDIDOS GRUPAL, INDIVIDUAL, AMBAS
+
+        $alumnos_atendidos_forma_grupal = reporte_semestral_individual::select('modalidadPrep')->where('id_generacion', $id_generacion)->where('periodo', $periodo)
+            ->get();
+        $alumnos_atendidos_forma_grupal = $alumnos_atendidos_forma_grupal->filter(function ($item) {
+            return $item->modalidadPrep == 'GR'; // Reemplaza 'tu_condicion' con el nombre del campo correcto
+        });
+        $alumnos_atendidos_forma_grupal_total = $alumnos_atendidos_forma_grupal->count();
+
+
+        if ($numero_total_alumnos_asignados_carrera != 0) {
+            $porcentaje_alumnos_atendidos_forma_grupal = ($alumnos_atendidos_forma_grupal_total * 100) / $numero_total_alumnos_asignados_carrera;
+        } else {
+            $porcentaje_alumnos_atendidos_forma_grupal = 0; // O manejarlo de otra manera según tus necesidades
+        }
+
+
+        //=========================================================================
+        //=========================================================================
+        //=========================================================================
+
+
+
+        $alumnos_atendidos_forma_individual = reporte_semestral_individual::select('modalidadPrep')->where('id_generacion', $id_generacion)->where('periodo', $periodo)
+            ->get();
+        $alumnos_atendidos_forma_individual = $alumnos_atendidos_forma_individual->filter(function ($item) {
+            return $item->modalidadPrep == 'IN'; // Reemplaza 'tu_condicion' con el nombre del campo correcto
+        });
+        $alumnos_atendidos_forma_individual_total = $alumnos_atendidos_forma_individual->count();
+
+        if ($numero_total_alumnos_asignados_carrera != 0) {
+            $porcentaje_alumnos_atendidos_forma_individual = ($alumnos_atendidos_forma_individual_total * 100) / $numero_total_alumnos_asignados_carrera;
+        } else {
+            $porcentaje_alumnos_atendidos_forma_individual = 0; // O manejarlo de otra manera según tus necesidades
+        }
+
+        //=========================================================================
+        //=========================================================================
+        //=========================================================================
+
+
+        $alumnos_atendidos_forma_ambas = reporte_semestral_individual::select('modalidadPrep')->where('id_generacion', $id_generacion)->where('periodo', $periodo)
+            ->get();
+        $alumnos_atendidos_forma_ambas = $alumnos_atendidos_forma_ambas->filter(function ($item) {
+            return $item->modalidadPrep == 'AM'; // Reemplaza 'tu_condicion' con el nombre del campo correcto
+        });
+        $alumnos_atendidos_forma_ambas_total = $alumnos_atendidos_forma_ambas->count();
+
+        if ($numero_total_alumnos_asignados_carrera != 0) {
+            $porcentaje_alumnos_atendidos_forma_ambas = ($alumnos_atendidos_forma_ambas_total * 100) / $numero_total_alumnos_asignados_carrera;
+        } else {
+            $porcentaje_alumnos_atendidos_forma_ambas = 0; // O manejarlo de otra manera según tus necesidades
+        }
+
+        //==========================================================================
+        //==========================================================================
+        //=============================================================================
+
+        //Obtenemos la lista de tutores asignados, que usaremos para todas las demas consultas:
+        $lista_tutores_asignados = ListadoTutorados::select('listado_tutorados.id_tutor', 'tutores.*', 'docentes.*')
+            ->join('tutores', 'tutores.id', '=', 'listado_tutorados.id_tutor')
+            ->join('docentes', 'docentes.id', '=', 'tutores.id_docente')
+            ->where('listado_tutorados.id_generacion', $id_generacion)
+            ->distinct('listado_tutorados.id_tutor') // Aplica distinct al campo id_tutor
+            ->get();
+
+        //==================================================================================
+
+        $array_tutores_informacion = array();
+
+        //Por cada tutor en "$lista_tutores_asignados" vamos a encontrar los tutoradops asignados:
+        $lista_tutorados_asignados = ListadoTutorados::select('listado_tutorados.id_tutor', 'tutores.*', 'docentes.*')
+            ->join('tutores', 'tutores.id', '=', 'listado_tutorados.id_tutor')
+            ->join('docentes', 'docentes.id', '=', 'tutores.id_docente')
+            ->where('listado_tutorados.id_generacion', $id_generacion)
+            ->where('docentes.id_carrera', $id_carrera)
+            ->distinct(['listado_tutorados.id_alumno', 'listado_tutorados.id_generacion']) // Aplica distinct al campo id_tutor
+            ->get();
+
+
+        //Recorremos segun los tutores:
+        for ($i = 0; $i < $lista_tutorados_asignados_numero; $i++) {
+            $informe_general = new stdClass();
+            $informe_general->numero_checador = $lista_tutorados_asignados[$i]->numero_checador;
+            $informe_general->nombre_tutor = $lista_tutorados_asignados[$i]->nombre . " " . $lista_tutorados_asignados[$i]->apellido_paterno . " " . $lista_tutorados_asignados[$i]->apellido_materno;
+            $lista_alumnos_del_tutor = ListadoTutorados::select('listado_tutorados.*')->where('id_tutor', $lista_tutorados_asignados[$i]->id_tutor)->get();
+            $informe_general->lista_alumnos_del_tutor = $lista_alumnos_del_tutor;
+            $informe_general->tutorados_asignados = $lista_alumnos_del_tutor->count();
+
+        
+            $atendidos_grupal_total = 0;
+            $atendidos_individual_total = 0;
+            $atendidos_ambas_total = 0;
+            $atendidos_NA_total = 0;
+
+            //Por cada id del array de alumnos, buscamos en el primer,segundo y tercer informe, pero debemos para cuando lo encuentre e ir sumando:
+            foreach ($lista_alumnos_del_tutor as $id_alumno) {
+                $lista_modalidad_preponderante = [];
+                //Buscamos en el primer informe:
+                $buscar_primer_informe = PrimerInforme::select('modalidad')->where('id_alumno', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->where('periodo', $periodo)->first();
+                if ($buscar_primer_informe) {
+                    if ($buscar_primer_informe->modalidad == 'GR') {
+                        $lista_modalidad_preponderante[] = 'GR';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'AM') {
+                        $lista_modalidad_preponderante[] = 'AM';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'IN') {
+                        $lista_modalidad_preponderante[] = 'IN';
+
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'NA' || $buscar_primer_informe->modalidad == 'N/A') {
+                        $lista_modalidad_preponderante[] = 'NA';
+                    }
+                }
+                //Buscamos en el segundo informe:
+                $buscar_segundo_informe = SegundoInforme::select('modalidad')->where('id_alumno', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->where('periodo', $periodo)->first();
+                if ($buscar_segundo_informe) {
+                    if ($buscar_primer_informe->modalidad == 'GR') {
+                        $lista_modalidad_preponderante[] = 'GR';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'AM') {
+                        $lista_modalidad_preponderante[] = 'AM';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'IN') {
+                        $lista_modalidad_preponderante[] = 'IN';
+
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'NA' || $buscar_primer_informe->modalidad == 'N/A') {
+                        $lista_modalidad_preponderante[] = 'NA';
+                    }
+                }
+                //Buscamos en el tercer informe:
+                $buscar_tercer_informe = TercerInforme::select('modalidad')->where('id_alumno', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->where('periodo', $periodo)->first();
+                if ($buscar_tercer_informe) {
+                    if ($buscar_primer_informe->modalidad == 'GR') {
+                        $lista_modalidad_preponderante[] = 'GR';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'AM') {
+                        $lista_modalidad_preponderante[] = 'AM';
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'IN') {
+                        $lista_modalidad_preponderante[] = 'IN';
+
+                        // continue;
+                    }
+                    if ($buscar_primer_informe->modalidad == 'NA' || $buscar_primer_informe->modalidad == 'N/A') {
+                        $lista_modalidad_preponderante[] = 'NA';
+                    }
+                }  
+
+                //Del array de modalidades, sacamos la que mas se repite:
+                $modalidad_preponderante = array_reduce($lista_modalidad_preponderante, function ($carry, $item) {
+                    $carry[$item] = ($carry[$item] ?? 0) + 1;
+                    return $carry;
+                }, []);
+
+                //Validamos que tipo de modalidad fue:
+                if (array_key_exists('GR', $modalidad_preponderante)) {
+                    $atendidos_grupal_total++;
+                }
+                if (array_key_exists('IN', $modalidad_preponderante)) {
+                    $atendidos_individual_total++;
+                }
+                if (array_key_exists('AM', $modalidad_preponderante)) {
+                    $atendidos_ambas_total++;
+                }
+                if (array_key_exists('NA', $modalidad_preponderante)) {
+                    $atendidos_NA_total++;
+                }
+                if (array_key_exists('N/A', $modalidad_preponderante)) {
+                    $atendidos_NA_total++;
+                }
+            }
+            //Tutorados atendidos:
+            $informe_general->tutores_asignados_individual = $atendidos_individual_total;
+            $informe_general->tutores_asignados_grupal = $atendidos_grupal_total;
+            $informe_general->tutores_asignados_ambas = $atendidos_ambas_total;
+            $informe_general->no_asistieron = $atendidos_NA_total;
+
+            //Verificamos las bajas y deserciones
+            $informe_general->bajas = 0;
+            $informe_general->desercion = 0;
+            foreach ($lista_alumnos_del_tutor as $id_alumno) {
+                $lista_modalidad_preponderante = [];
+                $buscar_primer_informe = Alumnos::select('mostrar')->where('id', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->first();
+
+                if ($buscar_primer_informe->mostrar == 0) {
+                    $informe_general->bajas++;
+                }
+                if ($buscar_primer_informe->mostrar == 2) {
+                    $informe_general->desercion++;
+                }
+            }
+
+            //GRUPO Y SECCION:
+            $informe_general->grupo_seccion = 'N/A';
+            foreach ($lista_alumnos_del_tutor as $id_alumno) {
+                $lista_modalidad_preponderante = [];
+                $buscar_primer_informe = Alumnos::select('grupo')->where('id', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->first();
+
+                $informe_general->grupo_seccion == $buscar_primer_informe->grupo;
+            }
+
+
+            $array_tutores_informacion[$i] = $informe_general;
+        }
+
+
+        //=====================================================================
+        // DISTRIBUCION POR SEMESTRE-SEXO
+        $array_tutores_informacion_distribucion_sexo = array();
+        //=====================================================================
+
+
+        for ($i = 0; $i < $lista_tutorados_asignados_numero; $i++) {
+            $distribucion_por_sexo_1 = new stdClass();
+            $distribucion_por_sexo_1->numero_checador = $lista_tutorados_asignados[$i]->numero_checador;
+            $distribucion_por_sexo_1->nombre_tutor = $lista_tutorados_asignados[$i]->nombre . " " . $lista_tutorados_asignados[$i]->apellido_paterno . " " . $lista_tutorados_asignados[$i]->apellido_materno;
+            $lista_alumnos_del_tutor = ListadoTutorados::select('listado_tutorados.*')->where('id_tutor', $lista_tutorados_asignados[$i]->id_tutor)->get();
+
+
+            $mujeres_primero = 0;
+            $mujeres_distprimero = 0;
+            $hombres_primero = 0;
+            $hombres_distprimero = 0;
+
+            foreach ($lista_alumnos_del_tutor as $id_alumno) {
+                $lista_modalidad_preponderante = [];
+                //Buscamos en el primer informe:
+                $informacion_alumno = Alumnos::select('*')->where('id', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->first();
+                if ($informacion_alumno) {
+                    if ($informacion_alumno->sexo == 'M' && $informacion_alumno->semestre == 1) {
+                        $mujeres_primero++;
+                    }
+
+                    if ($informacion_alumno->sexo == 'M' && $informacion_alumno->semestre > 1) {
+                        $mujeres_distprimero++;
+                    }
+                    if ($informacion_alumno->sexo == 'H' && $informacion_alumno->semestre == 1) {
+                        $hombres_primero++;
+                    }
+
+                    if ($informacion_alumno->sexo == 'H' && $informacion_alumno->semestre > 1) {
+                        $hombres_distprimero++;
+                    }
+                }
+            }
+            //Tutorados atendidos:
+            $distribucion_por_sexo_1->mujeres_primero = $mujeres_primero;
+            $distribucion_por_sexo_1->mujeres_distprimero = $mujeres_distprimero;
+            $distribucion_por_sexo_1->hombres_primero = $hombres_primero;
+            $distribucion_por_sexo_1->hombres_distprimero = $hombres_distprimero;
+            $distribucion_por_sexo_1->total = $mujeres_primero + $mujeres_distprimero + $hombres_primero + $hombres_distprimero;
+
+            $array_tutores_informacion_distribucion_sexo[$i] = $distribucion_por_sexo_1;
+        }
+
+        //Sacamos el total de cada columna:
+        $mujeres_primero_total = 0;
+        $mujeres_distprimero_total = 0;
+        $hombres_primero_total = 0;
+        $hombres_distprimero_total = 0;
+
+        //Del array array_tutores_informacion_distribucion_sexo hacemos la suma de todos los objetos:
+        foreach ($array_tutores_informacion_distribucion_sexo as $objeto) {
+            $mujeres_primero_total += $objeto->mujeres_primero;
+            $mujeres_distprimero_total += $objeto->mujeres_distprimero;
+            $hombres_primero_total += $objeto->hombres_primero;
+            $hombres_distprimero_total += $objeto->hombres_distprimero;
+        }
+
+        //Ahora creamos un objeto para almacenar los totales:
+        $distribucion_por_sexo_1_total = new stdClass();
+        $distribucion_por_sexo_1_total->mujeres_primero_total = $mujeres_primero_total;
+        $distribucion_por_sexo_1_total->mujeres_distprimero_total = $mujeres_distprimero_total;
+        $distribucion_por_sexo_1_total->hombres_primero_total = $hombres_primero_total;
+        $distribucion_por_sexo_1_total->hombres_distprimero_total = $hombres_distprimero_total;
+        $distribucion_por_sexo_1_total->total = $mujeres_primero_total + $mujeres_distprimero_total + $hombres_primero_total + $hombres_distprimero_total;
+
+
+
+
+
+        //=====================================================================
+        // DISTRIBUCION POR SEMESTRE-SEXO 2
+        $array_tutores_informacion_distribucion_sexo_2 = array();
+        //=====================================================================
+
+
+        for ($i = 0; $i < $lista_tutorados_asignados_numero; $i++) {
+            $distribucion_por_sexo_2 = new stdClass();
+            $distribucion_por_sexo_2->numero_checador = $lista_tutorados_asignados[$i]->numero_checador;
+            $distribucion_por_sexo_2->nombre_tutor = $lista_tutorados_asignados[$i]->nombre . " " . $lista_tutorados_asignados[$i]->apellido_paterno . " " . $lista_tutorados_asignados[$i]->apellido_materno;
+            $lista_alumnos_del_tutor = ListadoTutorados::select('listado_tutorados.*')->where('id_tutor', $lista_tutorados_asignados[$i]->id_tutor)->get();
+
+
+            $semestre_1 = 0;
+            $semestre_2 = 0;
+            $semestre_3 = 0;
+            $semestre_4 = 0;
+            $semestre_5 = 0;
+            $semestre_6 = 0;
+            $semestre_7 = 0;
+            $semestre_8 = 0;
+
+
+            foreach ($lista_alumnos_del_tutor as $id_alumno) {
+                $lista_modalidad_preponderante = [];
+                //Buscamos en el primer informe:
+                $informacion_alumno = Alumnos::select('*')->where('id', $id_alumno->id_alumno)->where('id_generacion', $id_generacion)->first();
+                if ($informacion_alumno) {
+
+                    if ($informacion_alumno->semestre == 1) {
+                        $semestre_1++;
+                    }
+                    if ($informacion_alumno->semestre == 2) {
+                        $semestre_2++;
+                    }
+                    if ($informacion_alumno->semestre == 3) {
+                        $semestre_3++;
+                    }
+                    if ($informacion_alumno->semestre == 4) {
+                        $semestre_4++;
+                    }
+                    if ($informacion_alumno->semestre == 5) {
+                        $semestre_5++;
+                    }
+                    if ($informacion_alumno->semestre == 6) {
+                        $semestre_6++;
+                    }
+                    if ($informacion_alumno->semestre == 7) {
+                        $semestre_7++;
+                    }
+                    if ($informacion_alumno->semestre == 8) {
+                        $semestre_8++;
+                    }
+                }
+            }
+            //Tutorados atendidos:
+            $distribucion_por_sexo_2->semestre_1 = $semestre_1;
+            $distribucion_por_sexo_2->semestre_2 = $semestre_2;
+            $distribucion_por_sexo_2->semestre_3 = $semestre_3;
+            $distribucion_por_sexo_2->semestre_4 = $semestre_4;
+            $distribucion_por_sexo_2->semestre_5 = $semestre_5;
+            $distribucion_por_sexo_2->semestre_6 = $semestre_6;
+            $distribucion_por_sexo_2->semestre_7 = $semestre_7;
+            $distribucion_por_sexo_2->semestre_8 = $semestre_8;
+            $distribucion_por_sexo_2->total = $semestre_1 + $semestre_2 + $semestre_3 + $semestre_4 + $semestre_5 + $semestre_6 + $semestre_7 + $semestre_8;
+            $array_tutores_informacion_distribucion_sexo_2[$i] = $distribucion_por_sexo_2;
+        }
+
+        //Hacemos la suma de todos los semestres del array:
+        $semestre_1_total = 0;
+        $semestre_2_total = 0;
+        $semestre_3_total = 0;
+        $semestre_4_total = 0;
+        $semestre_5_total = 0;
+        $semestre_6_total = 0;
+        $semestre_7_total = 0;
+        $semestre_8_total = 0;
+ //Del array array_tutores_informacion_distribucion_sexo hacemos la suma de todos los objetos:
+            foreach ($array_tutores_informacion_distribucion_sexo_2 as $objeto) {
+                $semestre_1_total += $objeto->semestre_1;
+                $semestre_2_total += $objeto->semestre_2;
+                $semestre_3_total += $objeto->semestre_3;
+                $semestre_4_total += $objeto->semestre_4;
+                $semestre_5_total += $objeto->semestre_5;
+                $semestre_6_total += $objeto->semestre_6;
+                $semestre_7_total += $objeto->semestre_7;
+                $semestre_8_total += $objeto->semestre_8;
+            }
+
+        $distribucion_por_sexo_2_total = new stdClass();
+        $distribucion_por_sexo_2_total->semestre_1_total = $semestre_1_total;
+        $distribucion_por_sexo_2_total->semestre_2_total = $semestre_2_total;
+        $distribucion_por_sexo_2_total->semestre_3_total = $semestre_3_total;
+        $distribucion_por_sexo_2_total->semestre_4_total = $semestre_4_total;
+        $distribucion_por_sexo_2_total->semestre_5_total = $semestre_5_total;
+        $distribucion_por_sexo_2_total->semestre_6_total = $semestre_6_total;
+        $distribucion_por_sexo_2_total->semestre_7_total = $semestre_7_total;
+        $distribucion_por_sexo_2_total->semestre_8_total = $semestre_8_total;
+        $distribucion_por_sexo_2_total->total = $semestre_1_total + $semestre_2_total + $semestre_3_total + $semestre_4_total + $semestre_5_total + $semestre_6_total + $semestre_7_total + $semestre_8_total;
+
+        
+
+
+
+
+        //=====================================================================
+        // RESULTADO, OBJETO DEVUELTO AL FRONTEND:
+        //=====================================================================
+
+
+
+        // Crea un objeto personalizado para almacenar los valores
+        $resultado = new stdClass();
+        $resultado->lista_tutores_asignados = $lista_tutores_asignados;
+        $resultado->lista_tutorados_asignados = $lista_tutorados_asignados;
+
+        $resultado->total_tutores_asignados = $total_tutores_asignados;
+        $resultado->numero_total_alumnos_asignados_carrera = $numero_total_alumnos_matricula_carrera;
+
+        $resultado->numero_total_alumnos_con_diagnostico = $numero_total_alumnos_con_diagnostico;
+        //$resultado->porcentaje_alumnos_con_diagnostico = $porcentaje_alumnos_con_diagnostico;
+
+
+        $resultado->alumnos_atendidos_forma_grupal_total = $alumnos_atendidos_forma_grupal_total;
+        $resultado->porcentaje_alumnos_atendidos_forma_grupal = $porcentaje_alumnos_atendidos_forma_grupal;
+
+        $resultado->alumnos_atendidos_forma_individual_total = $alumnos_atendidos_forma_individual_total;
+        $resultado->porcentaje_alumnos_atendidos_forma_individual = $porcentaje_alumnos_atendidos_forma_individual;
+
+        $resultado->alumnos_atendidos_forma_ambas_total = $alumnos_atendidos_forma_ambas_total;
+        $resultado->porcentaje_alumnos_atendidos_forma_ambas = $porcentaje_alumnos_atendidos_forma_ambas;
+
+
+        $resultado->alumnos_atendidos_forma_inasistencia = $alumnos_atendidos_forma_inasistencia;
+        $resultado->alumnos_atendidos_forma_inasistencia_porcentaje = $alumnos_atendidos_forma_inasistencia_porcentaje;
+
+        ///
+
+        $resultado->total_matricula_carrera = $numero_total_alumnos_matricula_carrera;
+        $resultado->porcentaje_total_matricula_carrera = ($numero_total_alumnos_matricula_carrera / $numero_total_alumnos_matricula_carrera) * 100;
+
+        $resultado->informe_general = $array_tutores_informacion;
+        $resultado->distribucion_por_sexo_1 = $array_tutores_informacion_distribucion_sexo;
+        $resultado->distribucion_por_sexo_1_total = $distribucion_por_sexo_1_total;
+        $resultado->distribucion_por_sexo_2 = $array_tutores_informacion_distribucion_sexo_2;
+        $resultado->distribucion_por_sexo_2_total = $distribucion_por_sexo_2_total;
+
+
+        $resultado->numero_tutores_carrera_total = $numero_tutores_carrera_total;
+        $resultado->numero_tutores_carrera_asignados = $numero_tutores_carrera_asignados;
+        // $resultado->porcentaje_tutores_carrera_asignados = ($numero_tutores_carrera_asignados / $numero_tutores_carrera_total) * 100;
+        $resultado->porcentaje_tutores_carrera_asignados = ($total_tutores_asignados / $numero_tutores_carrera_total) * 100;
+
+
+
+        // Devuelve el objeto como resultado
+        // return response()->json($resultado);
+
+        return response()->json([
+            'codigo' => 1,
+            'data' => $resultado
+        ], 200);
+
+
+
+
+
+    }
+
     public function verificacionInformesCoordinadorInst(Request $request)
     {
         //Es NECESARIO AGREGAR LA CARRERA EN ESTAS TABLAS PARA PODER FILTRAR TODO EL PINCHE PEDO.

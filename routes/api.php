@@ -19,6 +19,7 @@ Route::group(['prefix' => 'coordinadorInstiucional'], function () {
     Route::post('/obtenerDocentesCarrera', [CoordinadorInstitucionalController::class, 'obtenerDocentesCarrera']);
     Route::post('/asignarTutorCarrera', [CoordinadorInstitucionalController::class, 'asignarTutorCarrera']);
     Route::post('/generarReportesSemestrales', [CoordinadorInstitucionalController::class, 'generarReportesSemestrales']);
+    Route::post('/generarReporteParcial', [CoordinadorInstitucionalController::class, 'generarReporteParcial']);
     Route::post('/verificacionInformesCoordinadorInst', [CoordinadorInstitucionalController::class, 'verificacionInformesCoordinadorInst']);
     Route::post('/login', [CoordinadorInstitucionalController::class, 'login']);
     Route::post('/validarUsuario', [CoordinadorInstitucionalController::class, 'validarUsuario']);
